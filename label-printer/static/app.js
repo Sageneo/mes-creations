@@ -127,5 +127,66 @@ document.getElementById("detect-btn").addEventListener("click", async () => {
   }
 });
 
+// ----- Mode « code matériel » -----
+const codeEnabled = document.getElementById("code_enabled");
+const codeFields = document.getElementById("code-fields");
+const codeSeries = document.getElementById("code_series");
+const seriesEndField = document.getElementById("series-end-field");
+const codePrefix = document.getElementById("code_prefix");
+const codeYear = document.getElementById("code_year");
+const codeNumber = document.getElementById("code_number");
+const codePreviewText = document.getElementById("code-preview-text");
+
+function updateCodeMode() {
+  const on = codeEnabled.checked;
+  codeFields.style.display = on ? "block" : "none";
+  document.querySelectorAll(".manual-section").forEach((el) => {
+    el.style.display = on ? "none" : "";
+  });
+  updateCodePreviewText();
+}
+
+function updateSeries() {
+  seriesEndField.style.display = codeSeries.checked ? "flex" : "none";
+  updateCodePreviewText();
+}
+
+function updateCodePreviewText() {
+  if (!codeEnabled.checked) { codePreviewText.textContent = ""; return; }
+  const start = (codeNumber.value || "").padStart(4, "0");
+  let txt = codePrefix.value + "-" + codeYear.value + "-" + start;
+  if (codeSeries.checked) {
+    const end = (document.getElementById("code_number_end").value || "").padStart(4, "0");
+    const n = (parseInt(end, 10) - parseInt(start, 10)) + 1;
+    txt += " → " + codePrefix.value + "-" + codeYear.value + "-" + end +
+           (n > 0 ? "  (" + n + " étiquettes)" : "");
+  }
+  codePreviewText.textContent = "Code : " + txt;
+}
+
+codeEnabled.addEventListener("change", updateCodeMode);
+codeSeries.addEventListener("change", updateSeries);
+[codePrefix, codeYear, codeNumber, document.getElementById("code_number_end")]
+  .forEach((el) => el.addEventListener("input", updateCodePreviewText));
+
+document.getElementById("next-num-btn").addEventListener("click", async () => {
+  try {
+    const url = "/api/next-number?prefix=" + encodeURIComponent(codePrefix.value) +
+                "&year=" + encodeURIComponent(codeYear.value);
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.number !== undefined) {
+      codeNumber.value = data.number;
+      updateCodePreviewText();
+      setStatus("Prochain numéro libre : " + data.number, "ok");
+    } else {
+      setStatus("❌ " + (data.error || "Erreur"), "err");
+    }
+  } catch (e) { setStatus("❌ " + e.message, "err"); }
+});
+
+updateCodeMode();
+updateSeries();
+
 // Détection automatique de l'étiquette au démarrage (silencieuse).
 loadLabelMeta().then(() => detectMedia(true));

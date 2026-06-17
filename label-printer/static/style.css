@@ -89,3 +89,7 @@ button:disabled { opacity: .6; cursor: progress; }
 #preview-img { max-width: 100%; height: auto; display: none; box-shadow: 0 2px 8px rgba(0,0,0,.15); background:#fff; }
 #preview-empty { color: #6b7280; font-size: .9rem; text-align: center; }
 small { color: #6b7280; }
+
+.code-section { border-color: #1d4ed8; background: #eff6ff; }
+.code-section legend { color: #1d4ed8; }
+#code-preview-text { display: block; margin-top: .6rem; font-weight: 600; color: #1d4ed8; }

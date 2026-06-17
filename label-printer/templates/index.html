@@ -37,7 +37,68 @@
         <span>↻ Pivoter le contenu de 90° (écrire dans le sens de la longueur)</span>
       </label>
 
-      <fieldset>
+      <fieldset id="code-section" class="code-section">
+        <legend>📋 Suivi / Code matériel</legend>
+        <label class="field checkbox">
+          <input type="checkbox" name="code_enabled" id="code_enabled" {% if cfg.code_enabled %}checked{% endif %}>
+          <span><strong>Activer le code matériel</strong> (numérotation suivie, anti-doublon)</span>
+        </label>
+
+        <div id="code-fields">
+          <div class="row">
+            <label class="field small">
+              <span>Préfixe</span>
+              <select name="code_prefix" id="code_prefix">
+                {% for p, desc in prefixes.items() %}
+                <option value="{{ p }}" {% if p == cfg.code_prefix %}selected{% endif %}>{{ p }} — {{ desc }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="field small">
+              <span>Année (AA)</span>
+              <select name="code_year" id="code_year">
+                {% for y in years %}
+                <option value="{{ y }}" {% if y == cfg.code_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="field small">
+              <span>Numéro (départ)</span>
+              <input type="text" name="code_number" id="code_number" value="1000" placeholder="1000">
+            </label>
+            <button type="button" id="next-num-btn" class="ghost">Prochain libre</button>
+          </div>
+
+          <label class="field checkbox">
+            <input type="checkbox" name="code_series" id="code_series">
+            <span>Série (numéros consécutifs, une étiquette découpée chacun)</span>
+          </label>
+          <label class="field small" id="series-end-field" style="display:none">
+            <span>Jusqu'au numéro</span>
+            <input type="text" name="code_number_end" id="code_number_end" value="1010" placeholder="1010">
+          </label>
+
+          <div class="row" style="margin-top:.4rem">
+            <label class="field small checkbox">
+              <input type="checkbox" name="code_qr" {% if cfg.code_qr %}checked{% endif %}> <span>QR code</span>
+            </label>
+            <label class="field small checkbox">
+              <input type="checkbox" name="code_barcode" {% if cfg.code_barcode %}checked{% endif %}> <span>Code-barres</span>
+            </label>
+          </div>
+
+          <label class="field checkbox">
+            <input type="checkbox" name="code_reprint" id="code_reprint">
+            <span>♻️ Réimpression (autoriser un code déjà utilisé)</span>
+          </label>
+          <small id="code-preview-text"></small>
+        </div>
+      </fieldset>
+
+      <fieldset class="manual-section">
         <legend>Texte</legend>
         <textarea name="text" rows="3" placeholder="Une ligne par retour à la ligne…"></textarea>
         <div class="row">
@@ -59,7 +120,7 @@
         </div>
       </fieldset>
 
-      <fieldset>
+      <fieldset class="manual-section">
         <legend>QR code</legend>
         <input type="text" name="qr_data" placeholder="URL ou texte du QR code">
         <label class="field small" style="margin-top:.6rem">
@@ -68,7 +129,7 @@
         </label>
       </fieldset>
 
-      <fieldset>
+      <fieldset class="manual-section">
         <legend>Code-barres</legend>
         <div class="row">
           <input type="text" name="barcode_data" placeholder="Données du code-barres">
@@ -84,7 +145,7 @@
         </div>
       </fieldset>
 
-      <fieldset>
+      <fieldset class="manual-section">
         <legend>Image / logo</legend>
         <input type="file" name="image" accept="image/*">
       </fieldset>

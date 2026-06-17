@@ -15,6 +15,36 @@ de rouleau DK, de prévisualiser puis d'imprimer.
 - Import d'image/logo
 - Aperçu en direct dans le navigateur
 - Détection automatique de l'imprimante USB
+- Rotation du contenu à 90° (étiquettes prédécoupées)
+- **Suivi des codes matériel** (numérotation suivie, anti-doublon, séries)
+
+## Suivi / Code matériel
+
+Section « 📋 Suivi / Code matériel » pour étiqueter du matériel avec une
+numérotation suivie et **éviter les doublons**.
+
+**Structure du code : `PREFIXE-AA-NNNN`** (ex. `ECR-26-1000`)
+
+- **Préfixe** (liste fermée) : `PC` (ordinateur), `PCF` (fixe),
+  `PCP` (portable), `ECR` (écran), `DCK` (docking), `TAB` (tablette).
+  Tout autre préfixe est rejeté.
+- **Année** (`AA`) : 2 chiffres, par défaut l'année courante (2026 → `26`).
+- **Numéro** (`NNNN`) : 4 chiffres, de `1000` à `9999`. Compteur
+  **indépendant par couple (préfixe + année)** ; il redémarre à `1000`
+  à chaque nouvelle année.
+
+Fonctionnement :
+
+- Le bouton **« Prochain libre »** propose le prochain numéro non utilisé.
+- Cochez **QR code** et/ou **Code-barres** pour choisir l'encodage du code
+  (le code apparaît aussi en texte lisible). Code-barres en Code128.
+- **Série** : imprime une plage de numéros consécutifs (ex. `1000` → `1010`
+  = 11 étiquettes), **chacune découpée séparément**.
+- **Anti-doublon** : un code déjà imprimé est refusé, sauf si vous cochez
+  **« ♻️ Réimpression »** (cas d'une étiquette perdue ou abîmée).
+
+Les codes imprimés sont mémorisés dans `registry.json` (local, non suivi
+par git).
 
 ## Installation
 

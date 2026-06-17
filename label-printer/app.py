@@ -80,12 +80,16 @@ def _content_from_request(form, files, code=None) -> label_maker.LabelContent:
 
     if code is not None:
         # Mode « code matériel » : le contenu vient du code généré.
-        text = code
-        qr_data = code if _is_true(form, "code_qr") else ""
-        barcode_data = code if _is_true(form, "code_barcode") else ""
+        use_qr = _is_true(form, "code_qr")
+        use_barcode = _is_true(form, "code_barcode")
+        qr_data = code if use_qr else ""
+        barcode_data = code if use_barcode else ""
         barcode_type = "code128"   # supporte lettres + tirets
-        # Le code est déjà affiché comme texte : pas de doublon sous le code-barres.
-        barcode_text = False
+        # Style classique : le texte lisible est affiché SOUS les barres
+        # (texte intégré du code-barres). On n'ajoute donc pas de bloc texte
+        # séparé quand un code-barres est présent (sinon doublon).
+        barcode_text = True
+        text = "" if use_barcode else code
     else:
         text = form.get("text", "")
         qr_data = form.get("qr_data", "")

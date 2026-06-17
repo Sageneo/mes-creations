@@ -88,6 +88,10 @@
             <label class="field small checkbox">
               <input type="checkbox" name="code_barcode" {% if cfg.code_barcode %}checked{% endif %}> <span>Code-barres</span>
             </label>
+            <label class="field small">
+              <span>Taille du texte (0 = auto)</span>
+              <input type="number" name="code_font_size" value="{{ cfg.code_font_size }}" min="0" max="200">
+            </label>
           </div>
 
           <label class="field checkbox">

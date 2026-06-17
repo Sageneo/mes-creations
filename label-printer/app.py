@@ -24,6 +24,7 @@ CONFIG_KEYS = (
     "label", "length_mm", "font_size", "bold", "align",
     "qr_size_mm", "barcode_type", "printer", "cut", "rotate",
     "code_enabled", "code_prefix", "code_year", "code_qr", "code_barcode",
+    "code_font_size",
 )
 DEFAULT_CONFIG = {
     "label": "62", "length_mm": "0", "font_size": "0", "bold": True,
@@ -31,6 +32,7 @@ DEFAULT_CONFIG = {
     "printer": printer.default_printer(), "cut": True, "rotate": False,
     "code_enabled": False, "code_prefix": "ECR",
     "code_year": registry.current_yy(), "code_qr": True, "code_barcode": False,
+    "code_font_size": "0",
 }
 CONFIG_BOOL_KEYS = ("bold", "cut", "rotate", "code_enabled", "code_qr",
                     "code_barcode")
@@ -78,6 +80,9 @@ def _content_from_request(form, files, code=None) -> label_maker.LabelContent:
         except ValueError:
             return default
 
+    code_font_size = as_int("code_font_size", 0)
+    barcode_caption = ""
+    barcode_caption_size = 0
     if code is not None:
         # Mode « code matériel » : le contenu vient du code généré.
         use_qr = _is_true(form, "code_qr")
@@ -85,11 +90,15 @@ def _content_from_request(form, files, code=None) -> label_maker.LabelContent:
         qr_data = code if use_qr else ""
         barcode_data = code if use_barcode else ""
         barcode_type = "code128"   # supporte lettres + tirets
-        # Style classique : le texte lisible est affiché SOUS les barres
-        # (texte intégré du code-barres). On n'ajoute donc pas de bloc texte
-        # séparé quand un code-barres est présent (sinon doublon).
-        barcode_text = True
-        text = "" if use_barcode else code
+        barcode_text = False
+        # Style classique : le code lisible est placé SOUS les barres, avec une
+        # taille réglable. En QR seul, le code est affiché comme bloc texte.
+        if use_barcode:
+            barcode_caption = code
+            barcode_caption_size = code_font_size
+            text = ""
+        else:
+            text = code
     else:
         text = form.get("text", "")
         qr_data = form.get("qr_data", "")
@@ -97,10 +106,13 @@ def _content_from_request(form, files, code=None) -> label_maker.LabelContent:
         barcode_type = form.get("barcode_type", "code128")
         barcode_text = True
 
+    # En mode code, la taille du texte (QR seul) vient du champ dédié.
+    font_size = code_font_size if code is not None else as_int("font_size", 0)
+
     return label_maker.LabelContent(
         label=form.get("label", "62"),
         text=text,
-        font_size=as_int("font_size", 0),
+        font_size=font_size,
         bold=_is_true(form, "bold"),
         align=form.get("align", "center"),
         qr_data=qr_data,
@@ -108,6 +120,8 @@ def _content_from_request(form, files, code=None) -> label_maker.LabelContent:
         barcode_data=barcode_data,
         barcode_type=barcode_type,
         barcode_text=barcode_text,
+        barcode_caption=barcode_caption,
+        barcode_caption_size=barcode_caption_size,
         image_bytes=image_bytes,
         length_mm=as_int("length_mm", 0),
         rotate=_is_true(form, "rotate"),

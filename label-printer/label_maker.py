@@ -112,6 +112,26 @@ def _make_barcode(data: str, symbology: str = "code128", write_text: bool = True
     return Image.open(buf).convert("L")
 
 
+def _with_caption(bar_img: Image.Image, text: str, size: int,
+                  bold: bool = True) -> Image.Image:
+    """Ajoute une légende centrée SOUS le code-barres (taille réglable)."""
+    w = bar_img.width
+    if size <= 0:
+        size = max(22, w // 12)          # taille auto proportionnelle
+    font = _load_font(size, bold)
+    probe = ImageDraw.Draw(Image.new("L", (1, 1)))
+    bbox = probe.textbbox((0, 0), text, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    gap = max(4, size // 4)
+    out_w = max(w, tw + 8)
+    out = Image.new("L", (out_w, bar_img.height + gap + th + 6), 255)
+    out.paste(bar_img, ((out_w - w) // 2, 0))
+    draw = ImageDraw.Draw(out)
+    draw.text(((out_w - tw) // 2 - bbox[0], bar_img.height + gap - bbox[1]),
+              text, font=font, fill=0)
+    return out
+
+
 @dataclass
 class LabelContent:
     label: str = "62"            # identifiant du rouleau DK
@@ -123,7 +143,9 @@ class LabelContent:
     qr_size_mm: int = 0          # 0 => auto
     barcode_data: str = ""
     barcode_type: str = "code128"
-    barcode_text: bool = True    # afficher le texte sous le code-barres
+    barcode_text: bool = True    # texte intégré (style python-barcode)
+    barcode_caption: str = ""    # légende personnalisée sous les barres
+    barcode_caption_size: int = 0  # taille de la légende (0 => auto)
     image_bytes: bytes | None = field(default=None, repr=False)
     length_mm: int = 0           # longueur pour rouleau continu (0 => auto)
     rotate: bool = False         # pivoter le contenu de 90°
@@ -191,11 +213,19 @@ def render(content: LabelContent) -> Image.Image:
         blocks.append(_render_text_block(content, inner_w, max_h))
 
     if content.barcode_data.strip():
+        # Légende personnalisée => barres sans texte intégré, on l'ajoute après.
+        use_builtin = content.barcode_text and not content.barcode_caption
         bc = _make_barcode(content.barcode_data.strip(), content.barcode_type,
-                           write_text=content.barcode_text)
+                           write_text=use_builtin)
         if bc.width > inner_w:
             ratio = inner_w / bc.width
             bc = bc.resize((inner_w, int(bc.height * ratio)))
+        if content.barcode_caption:
+            bc = _with_caption(bc, content.barcode_caption,
+                               content.barcode_caption_size, content.bold)
+            if bc.width > inner_w:   # la légende peut élargir le bloc
+                ratio = inner_w / bc.width
+                bc = bc.resize((inner_w, int(bc.height * ratio)))
         blocks.append(bc)
 
     if not blocks:

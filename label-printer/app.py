@@ -38,6 +38,7 @@ def _content_from_request(form, files) -> label_maker.LabelContent:
         bold=form.get("bold", "true") in ("true", "on", "1"),
         align=form.get("align", "center"),
         qr_data=form.get("qr_data", ""),
+        qr_size_mm=as_int("qr_size_mm", 0),
         barcode_data=form.get("barcode_data", ""),
         barcode_type=form.get("barcode_type", "code128"),
         image_bytes=image_bytes,

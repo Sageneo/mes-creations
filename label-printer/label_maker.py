@@ -108,6 +108,7 @@ class LabelContent:
     bold: bool = True
     align: str = "center"        # left / center / right
     qr_data: str = ""
+    qr_size_mm: int = 0          # 0 => auto
     barcode_data: str = ""
     barcode_type: str = "code128"
     image_bytes: bytes | None = field(default=None, repr=False)
@@ -139,7 +140,11 @@ def render(content: LabelContent) -> Image.Image:
 
     if content.qr_data.strip():
         qr = _make_qr(content.qr_data.strip())
-        target = min(inner_w, 360)
+        if content.qr_size_mm > 0:
+            target = int(content.qr_size_mm / 25.4 * DPI)
+        else:
+            target = min(inner_w, 360)
+        target = max(40, min(target, inner_w))
         qr = qr.resize((target, target), Image.NEAREST)
         blocks.append(qr)
 
@@ -181,44 +186,47 @@ def render(content: LabelContent) -> Image.Image:
 
 
 def _render_text_block(content: LabelContent, inner_w: int) -> Image.Image:
-    text = content.text.strip()
-    lines = text.split("\n")
+    text = content.text.strip() or " "
+    spacing = 8
+    probe = ImageDraw.Draw(Image.new("L", (1, 1)))
+
+    def bbox_for(size: int):
+        font = _load_font(size, content.bold)
+        bbox = probe.multiline_textbbox(
+            (0, 0), text, font=font, spacing=spacing, align=content.align)
+        return font, bbox
 
     if content.font_size > 0:
         size = content.font_size
     else:
-        # Auto : on cherche la plus grande taille qui tient en largeur
-        size = 20
-        while size < 200:
-            font = _load_font(size + 8, content.bold)
-            longest = max(lines, key=len)
-            w = font.getbbox(longest)[2]
-            if w > inner_w:
+        # Auto : plus grande taille dont la largeur tient dans l'étiquette.
+        size = 12
+        while size < 400:
+            _, bbox = bbox_for(size + 4)
+            if (bbox[2] - bbox[0]) > inner_w:
                 break
-            size += 8
+            size += 4
 
-    font = _load_font(size, content.bold)
-    line_heights, line_widths = [], []
-    for ln in lines:
-        bbox = font.getbbox(ln or " ")
-        line_widths.append(bbox[2] - bbox[0])
-        line_heights.append(bbox[3] - bbox[1])
-    pad = max(8, size // 4)
-    block_h = sum(line_heights) + pad * (len(lines) - 1) + 8
-    block_w = max(max(line_widths), 1) + 8
+    font, bbox = bbox_for(size)
+    text_w = int(bbox[2] - bbox[0])
+    text_h = int(bbox[3] - bbox[1])
+    pad = max(6, size // 6)
 
-    img = Image.new("L", (max(block_w, inner_w), block_h), 255)
+    img_w = int(max(text_w + 2 * pad, inner_w))
+    img_h = int(text_h + 2 * pad)
+    img = Image.new("L", (img_w, img_h), 255)
     draw = ImageDraw.Draw(img)
-    y = 4
-    for ln, lw, lh in zip(lines, line_widths, line_heights):
-        if content.align == "left":
-            x = 0
-        elif content.align == "right":
-            x = img.width - lw
-        else:
-            x = (img.width - lw) // 2
-        draw.text((x, y), ln, font=font, fill=0)
-        y += lh + pad
+
+    # On retranche l'offset du bbox pour ne jamais rogner glyphes/accents.
+    if content.align == "left":
+        x = pad - bbox[0]
+    elif content.align == "right":
+        x = img_w - text_w - pad - bbox[0]
+    else:
+        x = (img_w - text_w) // 2 - bbox[0]
+    y = pad - bbox[1]
+    draw.multiline_text((x, y), text, font=font, fill=0,
+                        spacing=spacing, align=content.align)
     return img
 
 

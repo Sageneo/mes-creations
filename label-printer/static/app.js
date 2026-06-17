@@ -82,15 +82,15 @@ document.getElementById("save-btn").addEventListener("click", async () => {
   }
 });
 
-document.getElementById("detect-media-btn").addEventListener("click", async () => {
+async function detectMedia(silent) {
   const out = document.getElementById("media-result");
-  out.textContent = "Lecture de l'imprimante…";
+  if (!silent) out.textContent = "Lecture de l'imprimante…";
   try {
     const printer = encodeURIComponent(form.printer.value || "");
     const res = await fetch("/api/media?printer=" + printer);
     const data = await res.json();
     if (!data.available) {
-      out.textContent = "❌ " + (data.message || "Étiquette non détectée.");
+      out.textContent = silent ? "" : "❌ " + (data.message || "Étiquette non détectée.");
       return;
     }
     const kind = data.media_length ? (data.media_width + "x" + data.media_length + "mm") : (data.media_width + "mm continu");
@@ -103,9 +103,11 @@ document.getElementById("detect-media-btn").addEventListener("click", async () =
     if (data.errors && data.errors.length) msg += " ⚠️ " + data.errors.join(", ");
     out.textContent = msg;
   } catch (e) {
-    out.textContent = "❌ " + e.message;
+    out.textContent = silent ? "" : "❌ " + e.message;
   }
-});
+}
+
+document.getElementById("detect-media-btn").addEventListener("click", () => detectMedia(false));
 
 document.getElementById("detect-btn").addEventListener("click", async () => {
   const out = document.getElementById("detect-result");
@@ -125,4 +127,5 @@ document.getElementById("detect-btn").addEventListener("click", async () => {
   }
 });
 
-loadLabelMeta();
+// Détection automatique de l'étiquette au démarrage (silencieuse).
+loadLabelMeta().then(() => detectMedia(true));

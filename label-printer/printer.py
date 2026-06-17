@@ -76,28 +76,37 @@ def read_media_status(printer: str | None = None) -> dict:
     except Exception:
         backend = "pyusb"
 
-    be = backend_factory(backend)
-    dev = None
-    try:
-        dev = be["backend_class"](printer)
-        dev.write(_STATUS_REQUEST)
-        data = dev.read(32)
-        if not data or len(data) < 32:
-            return {"available": False,
-                    "message": "Aucune réponse de l'imprimante."}
-        info = interpret_response(data)
-        info["available"] = True
-        info["label"] = match_label(info.get("media_width", 0),
-                                    info.get("media_length", 0))
-        return info
-    except Exception as exc:  # noqa: BLE001
-        return {"available": False, "message": str(exc)}
-    finally:
-        if dev is not None:
-            try:
-                dev.dispose()
-            except Exception:
-                pass
+    attempts = [(printer, backend)]
+    if backend == "pyusb":
+        fb = _linux_kernel_fallback()
+        if fb:
+            attempts.append((fb, "linux_kernel"))
+
+    last_err = "Aucune réponse de l'imprimante."
+    for ident, backend_id in attempts:
+        be = backend_factory(backend_id)
+        dev = None
+        try:
+            dev = be["backend_class"](ident)
+            dev.write(_STATUS_REQUEST)
+            data = dev.read(32)
+            if not data or len(data) < 32:
+                last_err = "Aucune réponse de l'imprimante."
+                continue
+            info = interpret_response(data)
+            info["available"] = True
+            info["label"] = match_label(info.get("media_width", 0),
+                                        info.get("media_length", 0))
+            return info
+        except Exception as exc:  # noqa: BLE001
+            last_err = str(exc)
+        finally:
+            if dev is not None:
+                try:
+                    dev.dispose()
+                except Exception:
+                    pass
+    return {"available": False, "message": last_err}
 
 
 def match_label(width_mm: int, length_mm: int):
@@ -150,16 +159,46 @@ def print_label(image: Image.Image, label: str, printer: str | None = None,
         cut=cut,
     )
 
-    result = send(
-        instructions=instructions,
-        printer_identifier=printer,
-        backend_identifier=backend,
-        blocking=True,
-    )
-    ok = bool(result.get("did_print")) and bool(result.get("ready_for_next_job", True))
+    def _send(ident, backend_id):
+        result = send(
+            instructions=instructions,
+            printer_identifier=ident,
+            backend_identifier=backend_id,
+            blocking=True,
+        )
+        ok = bool(result.get("did_print")) and \
+            bool(result.get("ready_for_next_job", True))
+        return ok, result
+
+    try:
+        ok, result = _send(printer, backend)
+    except Exception as exc:  # noqa: BLE001
+        # Le backend USB brut (pyusb) expire souvent sur la QL-570 sous Linux.
+        # On retente automatiquement via le périphérique noyau /dev/usb/lp*.
+        fallback = _linux_kernel_fallback() if backend == "pyusb" else None
+        if not fallback:
+            raise
+        ok, result = _send(fallback, "linux_kernel")
+        result["fallback_used"] = fallback
+
     return {
         "success": ok,
         "message": "Impression envoyée." if ok
         else "L'imprimante n'a pas confirmé l'impression.",
         "details": result,
     }
+
+
+def _linux_kernel_fallback():
+    """Premier périphérique /dev/usb/lp* disponible (backend linux_kernel)."""
+    try:
+        be = backend_factory("linux_kernel")
+        for dev in be["list_available_devices"]():
+            ident = dev.get("identifier") if isinstance(dev, dict) else dev
+            if ident:
+                return ident
+    except Exception:
+        pass
+    import glob
+    nodes = sorted(glob.glob("/dev/usb/lp*"))
+    return f"file://{nodes[0]}" if nodes else None

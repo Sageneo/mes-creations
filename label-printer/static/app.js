@@ -70,6 +70,18 @@ form.addEventListener("submit", async (ev) => {
   }
 });
 
+document.getElementById("save-btn").addEventListener("click", async () => {
+  setStatus("Enregistrement de la configuration…");
+  try {
+    const data = new FormData(form);
+    const res = await fetch("/api/config", { method: "POST", body: data });
+    const out = await res.json();
+    setStatus(out.saved ? "✅ Configuration enregistrée (rechargée au prochain lancement)." : "❌ Échec de l'enregistrement.", out.saved ? "ok" : "err");
+  } catch (e) {
+    setStatus("❌ " + e.message, "err");
+  }
+});
+
 document.getElementById("detect-btn").addEventListener("click", async () => {
   const out = document.getElementById("detect-result");
   out.textContent = "Recherche…";

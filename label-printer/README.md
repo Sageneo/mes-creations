@@ -18,7 +18,9 @@ de rouleau DK, de prévisualiser puis d'imprimer.
 
 ## Installation
 
-Prérequis : Python 3.10+ et la bibliothèque `libusb`.
+Prérequis : Python 3.10+.
+
+### Linux
 
 ```bash
 # Dépendance système (Debian/Ubuntu)
@@ -31,11 +33,28 @@ cd label-printer
 `run.sh` crée un environnement virtuel, installe les dépendances et démarre
 le serveur sur <http://127.0.0.1:5000>.
 
-Installation manuelle :
+### Windows
+
+1. Installe [Python 3](https://www.python.org/downloads/) en cochant
+   **« Add Python to PATH »**.
+2. Double-clique sur **`run.bat`** (dans le dossier `label-printer`). Il crée
+   l'environnement, installe les dépendances, ouvre le navigateur sur
+   <http://127.0.0.1:5000> et démarre le serveur.
+3. **Accès USB sous Windows** : `brother_ql` parle à l'imprimante en USB
+   « brut » via libusb. Il faut donc remplacer le pilote USB de la QL-570 par
+   **WinUSB** à l'aide de [Zadig](https://zadig.akeo.ie/) : lance Zadig →
+   *Options ▸ List All Devices* → sélectionne la QL-570 → choisis **WinUSB** →
+   *Replace Driver*. L'imprimante n'apparaîtra alors plus comme imprimante
+   Windows classique, mais sera pilotable par ce programme.
+   *(Pour revenir au pilote Brother, désinstalle le périphérique dans le
+   Gestionnaire de périphériques et rebranche-le.)*
+
+### Installation manuelle (toutes plateformes)
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
+# Linux/macOS : source .venv/bin/activate
+# Windows     : .venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
@@ -73,6 +92,15 @@ Variables d'environnement reconnues :
 
 Le champ « Imprimante » de l'interface accepte aussi un backend
 `linux_kernel`, par exemple `file:///dev/usb/lp0`.
+
+## Sauvegarde de la configuration
+
+Le bouton **« 💾 Enregistrer comme défaut »** mémorise les réglages courants
+(format de rouleau, imprimante, tailles de police/QR, alignement, coupe…)
+dans un fichier `config.json` à côté du programme. Ces valeurs sont
+rechargées automatiquement au prochain lancement. La configuration est aussi
+sauvegardée à chaque impression. Le fichier `config.json` est local et n'est
+pas suivi par git.
 
 ## Architecture
 

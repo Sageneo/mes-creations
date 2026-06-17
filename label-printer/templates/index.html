@@ -18,14 +18,14 @@
         <span>Format du rouleau DK</span>
         <select name="label" id="label">
           {% for l in labels %}
-          <option value="{{ l.id }}" {% if l.id == '62' %}selected{% endif %}>{{ l.name }}</option>
+          <option value="{{ l.id }}" {% if l.id == cfg.label %}selected{% endif %}>{{ l.name }}</option>
           {% endfor %}
         </select>
       </label>
 
       <label class="field" id="length-field">
         <span>Longueur (mm, rouleau continu — 0 = auto)</span>
-        <input type="number" name="length_mm" value="0" min="0" max="1000">
+        <input type="number" name="length_mm" value="{{ cfg.length_mm }}" min="0" max="1000">
       </label>
 
       <fieldset>
@@ -34,18 +34,18 @@
         <div class="row">
           <label class="field small">
             <span>Taille (0 = auto)</span>
-            <input type="number" name="font_size" value="0" min="0" max="200">
+            <input type="number" name="font_size" value="{{ cfg.font_size }}" min="0" max="200">
           </label>
           <label class="field small">
             <span>Alignement</span>
             <select name="align">
-              <option value="center" selected>Centré</option>
-              <option value="left">Gauche</option>
-              <option value="right">Droite</option>
+              <option value="center" {% if cfg.align == 'center' %}selected{% endif %}>Centré</option>
+              <option value="left" {% if cfg.align == 'left' %}selected{% endif %}>Gauche</option>
+              <option value="right" {% if cfg.align == 'right' %}selected{% endif %}>Droite</option>
             </select>
           </label>
           <label class="field small checkbox">
-            <input type="checkbox" name="bold" checked> <span>Gras</span>
+            <input type="checkbox" name="bold" {% if cfg.bold %}checked{% endif %}> <span>Gras</span>
           </label>
         </div>
       </fieldset>
@@ -55,7 +55,7 @@
         <input type="text" name="qr_data" placeholder="URL ou texte du QR code">
         <label class="field small" style="margin-top:.6rem">
           <span>Taille du QR (mm — 0 = auto)</span>
-          <input type="number" name="qr_size_mm" value="0" min="0" max="62">
+          <input type="number" name="qr_size_mm" value="{{ cfg.qr_size_mm }}" min="0" max="62">
         </label>
       </fieldset>
 
@@ -64,12 +64,13 @@
         <div class="row">
           <input type="text" name="barcode_data" placeholder="Données du code-barres">
           <select name="barcode_type">
-            <option value="code128" selected>Code128</option>
-            <option value="code39">Code39</option>
-            <option value="ean13">EAN-13</option>
-            <option value="ean8">EAN-8</option>
-            <option value="upca">UPC-A</option>
-            <option value="isbn13">ISBN-13</option>
+            {% set bt = cfg.barcode_type %}
+            <option value="code128" {% if bt == 'code128' %}selected{% endif %}>Code128</option>
+            <option value="code39" {% if bt == 'code39' %}selected{% endif %}>Code39</option>
+            <option value="ean13" {% if bt == 'ean13' %}selected{% endif %}>EAN-13</option>
+            <option value="ean8" {% if bt == 'ean8' %}selected{% endif %}>EAN-8</option>
+            <option value="upca" {% if bt == 'upca' %}selected{% endif %}>UPC-A</option>
+            <option value="isbn13" {% if bt == 'isbn13' %}selected{% endif %}>ISBN-13</option>
           </select>
         </div>
       </fieldset>
@@ -81,10 +82,10 @@
 
       <fieldset>
         <legend>Imprimante</legend>
-        <input type="text" name="printer" value="{{ printer }}">
+        <input type="text" name="printer" value="{{ cfg.printer }}">
         <div class="row">
           <label class="field small checkbox">
-            <input type="checkbox" name="cut" checked> <span>Couper après impression</span>
+            <input type="checkbox" name="cut" {% if cfg.cut %}checked{% endif %}> <span>Couper après impression</span>
           </label>
           <button type="button" id="detect-btn" class="ghost">Détecter</button>
         </div>
@@ -93,6 +94,7 @@
 
       <div class="actions">
         <button type="button" id="preview-btn" class="ghost">Aperçu</button>
+        <button type="button" id="save-btn" class="ghost">💾 Enregistrer comme défaut</button>
         <button type="submit" id="print-btn">Imprimer</button>
       </div>
       <div id="status" class="status"></div>

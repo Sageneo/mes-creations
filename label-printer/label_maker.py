@@ -57,17 +57,27 @@ def _label_spec(identifier: str):
 
 
 def _load_font(size: int, bold: bool = False):
-    candidates = (
-        [
+    if bold:
+        candidates = [
+            # Linux
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            # Windows
+            "C:/Windows/Fonts/arialbd.ttf",
+            "C:/Windows/Fonts/segoeuib.ttf",
+            "arialbd.ttf",
+            # macOS
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
         ]
-        if bold
-        else [
+    else:
+        candidates = [
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/segoeui.ttf",
+            "arial.ttf",
+            "/System/Library/Fonts/Supplemental/Arial.ttf",
         ]
-    )
     for path in candidates:
         try:
             return ImageFont.truetype(path, size)

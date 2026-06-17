@@ -55,14 +55,45 @@ le navigateur).
 
 ## 🪟 Windows
 
-1. Installe **Python 3** depuis <https://www.python.org/downloads/> en
-   cochant **« Add Python to PATH »** pendant l'installation.
-2. Récupère le programme : télécharge le dossier `label-printer`
-   (ou `git clone` si tu as Git).
-3. Double-clique sur **`run.bat`**. La première fois, il installe tout
-   (≈ 1 min), puis ouvre le navigateur sur **http://127.0.0.1:5000**.
-4. **Accès USB** : installe le pilote **WinUSB** pour la QL-570 avec
-   [Zadig](https://zadig.akeo.ie/) (voir README → installation Windows).
+### 1. Installer Python
+Télécharge **Python 3** depuis <https://www.python.org/downloads/> et
+**coche « Add Python to PATH »** pendant l'installation.
+
+### 2. Télécharger le programme
+Deux façons :
+
+- **Sans Git (le plus simple)** : va sur
+  `https://github.com/Sageneo/mes-creations/tree/claude/eager-knuth-1b04mo`,
+  bouton vert **« Code » → « Download ZIP »**, puis décompresse. Le dossier
+  qui t'intéresse est **`label-printer`**.
+- **Avec Git** :
+  ```
+  git clone https://github.com/Sageneo/mes-creations.git
+  cd mes-creations\label-printer
+  git checkout claude/eager-knuth-1b04mo
+  ```
+
+### 3. Lancer
+Dans le dossier `label-printer`, deux possibilités :
+
+- **`launch.vbs`** → lance **sans fenêtre noire** (recommandé pour un poste
+  client) et ouvre le navigateur. La 1re fois, l'installation (~1 min) se
+  fait en arrière-plan.
+- **`run.bat`** → lance **avec** une fenêtre de console (pratique pour voir
+  les messages / déboguer).
+
+L'interface s'ouvre sur **http://127.0.0.1:5000**.
+
+### 4. Raccourci sur le bureau (optionnel)
+Double-clique **`install-shortcut.bat`** : il crée une icône
+**« Étiquettes QL-570 »** sur le bureau qui lance le programme sans console.
+
+### 5. Accès USB
+Installe le pilote **WinUSB** pour la QL-570 avec
+[Zadig](https://zadig.akeo.ie/) (voir README → installation Windows).
+
+> Pour arrêter le programme (lancé sans console), utilise le bouton
+> **« ⏻ Arrêter le programme »** en bas de l'interface.
 
 ---
 

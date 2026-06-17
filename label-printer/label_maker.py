@@ -123,20 +123,39 @@ class LabelContent:
     barcode_type: str = "code128"
     image_bytes: bytes | None = field(default=None, repr=False)
     length_mm: int = 0           # longueur pour rouleau continu (0 => auto)
+    rotate: bool = False         # pivoter le contenu de 90°
     margin: int = 16             # marge en pixels
 
 
 def render(content: LabelContent) -> Image.Image:
-    """Construit l'image finale de l'étiquette."""
+    """Construit l'image finale de l'étiquette.
+
+    Si ``content.rotate`` est vrai, le contenu est composé « en paysage »
+    (le texte court le long de la longueur de l'étiquette) puis l'image est
+    pivotée de 90° pour respecter l'orientation d'impression.
+    """
     spec = _label_spec(content.label)
-    width = spec.dots_printable[0]
-    fixed_height = spec.dots_printable[1]
-    continuous = fixed_height == 0
+    head = spec.dots_printable[0]        # largeur tête (axe transversal, fixe)
+    length = spec.dots_printable[1]      # longueur (0 => rouleau continu)
+    continuous = length == 0
 
     margin = content.margin
-    inner_w = width - 2 * margin
-    if inner_w < 10:
-        inner_w = width
+
+    if content.rotate:
+        # Composition en paysage : l'axe horizontal devient la longueur.
+        avail_w = length                 # 0 => continu (largeur libre)
+        cross = head                     # hauteur de composition fixée à la tête
+    else:
+        avail_w = head                   # largeur de composition fixée à la tête
+        cross = length                   # 0 => continu (hauteur libre)
+
+    if avail_w > 0:
+        inner_w = max(10, avail_w - 2 * margin)
+    else:
+        # Largeur libre (continu pivoté) : on borne large, la taille du texte
+        # est limitée par la hauteur (cross) via max_h.
+        inner_w = 4000
+    max_h = (cross - 2 * margin) if cross > 0 else None
 
     # --- Construction des blocs (de haut en bas) ---
     blocks: list[Image.Image] = []
@@ -154,12 +173,14 @@ def render(content: LabelContent) -> Image.Image:
             target = int(content.qr_size_mm / 25.4 * DPI)
         else:
             target = min(inner_w, 360)
+        if max_h:
+            target = min(target, max_h)
         target = max(40, min(target, inner_w))
         qr = qr.resize((target, target), Image.NEAREST)
         blocks.append(qr)
 
     if content.text.strip():
-        blocks.append(_render_text_block(content, inner_w))
+        blocks.append(_render_text_block(content, inner_w, max_h))
 
     if content.barcode_data.strip():
         bc = _make_barcode(content.barcode_data.strip(), content.barcode_type)
@@ -170,32 +191,41 @@ def render(content: LabelContent) -> Image.Image:
 
     if not blocks:
         blocks.append(_render_text_block(
-            LabelContent(text="(étiquette vide)", font_size=36), inner_w))
+            LabelContent(text="(étiquette vide)", font_size=36), inner_w, max_h))
 
     spacing = 12
+    content_w = max(b.width for b in blocks)
     content_h = sum(b.height for b in blocks) + spacing * (len(blocks) - 1)
 
-    # --- Hauteur finale du canevas ---
-    if continuous:
-        if content.length_mm > 0:
-            height = int(content.length_mm / 25.4 * DPI)
-        else:
-            height = content_h + 2 * margin
-        height = max(height, content_h + 2 * margin)
+    # --- Dimensions du canevas de composition ---
+    if avail_w > 0:
+        canvas_w = avail_w
     else:
-        height = fixed_height
+        canvas_w = content_w + 2 * margin
 
-    canvas = Image.new("L", (width, height), 255)
-    y = max(margin, (height - content_h) // 2)
+    if cross > 0:
+        canvas_h = cross
+    elif content.length_mm > 0:   # continu non pivoté avec longueur imposée
+        canvas_h = max(int(content.length_mm / 25.4 * DPI),
+                       content_h + 2 * margin)
+    else:
+        canvas_h = content_h + 2 * margin
+
+    canvas = Image.new("L", (canvas_w, canvas_h), 255)
+    y = max(margin, (canvas_h - content_h) // 2)
     for b in blocks:
-        x = (width - b.width) // 2
+        x = (canvas_w - b.width) // 2
         canvas.paste(b, (x, y))
         y += b.height + spacing
+
+    if content.rotate:
+        canvas = canvas.transpose(Image.ROTATE_90)
 
     return canvas
 
 
-def _render_text_block(content: LabelContent, inner_w: int) -> Image.Image:
+def _render_text_block(content: LabelContent, inner_w: int,
+                       max_h: int | None = None) -> Image.Image:
     text = content.text.strip() or " "
     spacing = 8
     probe = ImageDraw.Draw(Image.new("L", (1, 1)))
@@ -209,11 +239,15 @@ def _render_text_block(content: LabelContent, inner_w: int) -> Image.Image:
     if content.font_size > 0:
         size = content.font_size
     else:
-        # Auto : plus grande taille dont la largeur tient dans l'étiquette.
+        # Auto : plus grande taille qui tient en largeur (et en hauteur si
+        # une contrainte max_h est fournie — utile pour les étiquettes
+        # prédécoupées ou le contenu pivoté).
         size = 12
         while size < 400:
             _, bbox = bbox_for(size + 4)
-            if (bbox[2] - bbox[0]) > inner_w:
+            too_wide = (bbox[2] - bbox[0]) > inner_w
+            too_tall = max_h is not None and (bbox[3] - bbox[1]) > max_h
+            if too_wide or too_tall:
                 break
             size += 4
 

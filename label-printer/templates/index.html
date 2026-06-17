@@ -32,6 +32,11 @@
         <input type="number" name="length_mm" value="{{ cfg.length_mm }}" min="0" max="1000">
       </label>
 
+      <label class="field checkbox">
+        <input type="checkbox" name="rotate" {% if cfg.rotate %}checked{% endif %}>
+        <span>↻ Pivoter le contenu de 90° (écrire dans le sens de la longueur)</span>
+      </label>
+
       <fieldset>
         <legend>Texte</legend>
         <textarea name="text" rows="3" placeholder="Une ligne par retour à la ligne…"></textarea>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Étiquettes — Brother QL-570</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>🏷️ Impression d'étiquettes</h1>
+    <span class="sub">Brother QL-570</span>
+    <a href="/registry" style="margin-left:auto;color:#fff">📊 Suivi des codes →</a>
+  </header>
+
+  <main>
+    <form id="label-form" class="panel">
+      <label class="field">
+        <span>Format du rouleau DK</span>
+        <select name="label" id="label">
+          {% for l in labels %}
+          <option value="{{ l.id }}" {% if l.id == cfg.label %}selected{% endif %}>{{ l.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="row" style="margin:-.5rem 0 1rem">
+        <button type="button" id="detect-media-btn" class="ghost">🔎 Détecter l'étiquette dans la machine</button>
+      </div>
+      <small id="media-result"></small>
+
+      <label class="field" id="length-field">
+        <span>Longueur (mm, rouleau continu — 0 = auto)</span>
+        <input type="number" name="length_mm" value="{{ cfg.length_mm }}" min="0" max="1000">
+      </label>
+
+      <label class="field checkbox">
+        <input type="checkbox" name="rotate" {% if cfg.rotate %}checked{% endif %}>
+        <span>↻ Pivoter le contenu de 90° (écrire dans le sens de la longueur)</span>
+      </label>
+
+      <fieldset id="code-section" class="code-section">
+        <legend>📋 Suivi / Code matériel</legend>
+        <label class="field checkbox">
+          <input type="checkbox" name="code_enabled" id="code_enabled" {% if cfg.code_enabled %}checked{% endif %}>
+          <span><strong>Activer le code matériel</strong> (numérotation suivie, anti-doublon)</span>
+        </label>
+
+        <div id="code-fields">
+          <div class="row">
+            <label class="field small">
+              <span>Préfixe</span>
+              <select name="code_prefix" id="code_prefix">
+                {% for p, desc in prefixes.items() %}
+                <option value="{{ p }}" {% if p == cfg.code_prefix %}selected{% endif %}>{{ p }} — {{ desc }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="field small">
+              <span>Année (AA)</span>
+              <select name="code_year" id="code_year">
+                {% for y in years %}
+                <option value="{{ y }}" {% if y == cfg.code_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="field small">
+              <span>Numéro (départ)</span>
+              <input type="text" name="code_number" id="code_number" value="1000" placeholder="1000">
+            </label>
+            <button type="button" id="next-num-btn" class="ghost">Prochain libre</button>
+          </div>
+
+          <label class="field checkbox">
+            <input type="checkbox" name="code_series" id="code_series">
+            <span>Série (numéros consécutifs, une étiquette découpée chacun)</span>
+          </label>
+          <label class="field small" id="series-end-field" style="display:none">
+            <span>Jusqu'au numéro</span>
+            <input type="text" name="code_number_end" id="code_number_end" value="1010" placeholder="1010">
+          </label>
+
+          <div class="row" style="margin-top:.4rem">
+            <label class="field small checkbox">
+              <input type="checkbox" name="code_qr" {% if cfg.code_qr %}checked{% endif %}> <span>QR code</span>
+            </label>
+            <label class="field small checkbox">
+              <input type="checkbox" name="code_barcode" {% if cfg.code_barcode %}checked{% endif %}> <span>Code-barres</span>
+            </label>
+            <label class="field small">
+              <span>Taille du texte (0 = auto)</span>
+              <input type="number" name="code_font_size" value="{{ cfg.code_font_size }}" min="0" max="200">
+            </label>
+          </div>
+
+          <label class="field checkbox">
+            <input type="checkbox" name="code_reprint" id="code_reprint">
+            <span>♻️ Réimpression (autoriser un code déjà utilisé)</span>
+          </label>
+          <small id="code-preview-text"></small>
+        </div>
+      </fieldset>
+
+      <fieldset class="manual-section">
+        <legend>Texte</legend>
+        <textarea name="text" rows="3" placeholder="Une ligne par retour à la ligne…"></textarea>
+        <div class="row">
+          <label class="field small">
+            <span>Taille (0 = auto)</span>
+            <input type="number" name="font_size" value="{{ cfg.font_size }}" min="0" max="200">
+          </label>
+          <label class="field small">
+            <span>Alignement</span>
+            <select name="align">
+              <option value="center" {% if cfg.align == 'center' %}selected{% endif %}>Centré</option>
+              <option value="left" {% if cfg.align == 'left' %}selected{% endif %}>Gauche</option>
+              <option value="right" {% if cfg.align == 'right' %}selected{% endif %}>Droite</option>
+            </select>
+          </label>
+          <label class="field small checkbox">
+            <input type="checkbox" name="bold" {% if cfg.bold %}checked{% endif %}> <span>Gras</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="manual-section">
+        <legend>QR code</legend>
+        <input type="text" name="qr_data" placeholder="URL ou texte du QR code">
+        <label class="field small" style="margin-top:.6rem">
+          <span>Taille du QR (mm — 0 = auto)</span>
+          <input type="number" name="qr_size_mm" value="{{ cfg.qr_size_mm }}" min="0" max="62">
+        </label>
+      </fieldset>
+
+      <fieldset class="manual-section">
+        <legend>Code-barres</legend>
+        <div class="row">
+          <input type="text" name="barcode_data" placeholder="Données du code-barres">
+          <select name="barcode_type">
+            {% set bt = cfg.barcode_type %}
+            <option value="code128" {% if bt == 'code128' %}selected{% endif %}>Code128</option>
+            <option value="code39" {% if bt == 'code39' %}selected{% endif %}>Code39</option>
+            <option value="ean13" {% if bt == 'ean13' %}selected{% endif %}>EAN-13</option>
+            <option value="ean8" {% if bt == 'ean8' %}selected{% endif %}>EAN-8</option>
+            <option value="upca" {% if bt == 'upca' %}selected{% endif %}>UPC-A</option>
+            <option value="isbn13" {% if bt == 'isbn13' %}selected{% endif %}>ISBN-13</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset class="manual-section">
+        <legend>Image / logo</legend>
+        <input type="file" name="image" accept="image/*">
+      </fieldset>
+
+      <fieldset>
+        <legend>Imprimante</legend>
+        <input type="text" name="printer" value="{{ cfg.printer }}">
+        <div class="row">
+          <label class="field small checkbox">
+            <input type="checkbox" name="cut" {% if cfg.cut %}checked{% endif %}> <span>Couper après impression</span>
+          </label>
+          <button type="button" id="detect-btn" class="ghost">Détecter</button>
+        </div>
+        <small id="detect-result"></small>
+      </fieldset>
+
+      <div class="actions">
+        <button type="button" id="preview-btn" class="ghost">Aperçu</button>
+        <button type="button" id="save-btn" class="ghost">💾 Enregistrer comme défaut</button>
+        <button type="submit" id="print-btn">Imprimer</button>
+      </div>
+      <div id="status" class="status"></div>
+    </form>
+
+    <section class="panel preview-panel">
+      <h2>Aperçu</h2>
+      <div class="preview-box">
+        <img id="preview-img" alt="Aperçu de l'étiquette">
+        <p id="preview-empty">Cliquez sur « Aperçu » pour visualiser l'étiquette.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer style="text-align:center;padding:1rem">
+    <button type="button" id="quit-btn" class="ghost">⏻ Arrêter le programme</button>
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

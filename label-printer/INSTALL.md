@@ -118,7 +118,9 @@ Installe le pilote **WinUSB** pour la QL-570 avec
 
 | Problème | Solution |
 |---|---|
-| `python : command not found` (Windows) | Réinstalle Python en cochant « Add to PATH ». |
+| `Python was not found` / le Store s'ouvre (Windows) | Python n'est pas installé ou pas dans le PATH. Installe-le depuis [python.org](https://www.python.org/downloads/) en cochant **« Add Python to PATH »**. Puis : *Paramètres ▸ Applications ▸ Alias d'exécution d'application* → **désactive** les entrées `python.exe` / `python3.exe` du Microsoft Store. Redémarre la session, relance. |
+| `Le chemin d'accès spécifié est introuvable` / `.venv\Scripts\pythonw.exe` absent (Windows) | Conséquence du point ci-dessus : Python manquait, donc `.venv` n'a pas été créé. Corrige Python puis relance `launch.vbs` / `run.bat`. |
+| `python : command not found` (Linux) | `sudo apt install python3 python3-venv`. |
 | `./run.sh: Permission denied` | `chmod +x run.sh` puis relance. |
 | Imprimante non détectée | Vérifie le branchement, et les droits USB (README). |
 | Mauvaise numérotation après changement de PC | Exporte/importe le suivi (voir ci-dessus). |

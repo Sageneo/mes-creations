@@ -10,5 +10,12 @@ if [ ! -d ".venv" ]; then
   ./.venv/bin/pip install -r requirements.txt
 fi
 
-echo "Interface disponible sur http://127.0.0.1:5000"
+URL="http://127.0.0.1:${PORT:-5000}"
+echo "Interface disponible sur $URL"
+
+# Ouvre le navigateur automatiquement (après un court délai, en arrière-plan).
+if command -v xdg-open >/dev/null 2>&1; then
+  ( sleep 2; xdg-open "$URL" >/dev/null 2>&1 ) &
+fi
+
 exec ./.venv/bin/python app.py

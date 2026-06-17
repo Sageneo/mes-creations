@@ -23,7 +23,24 @@ installer Python, puis lancer le script fourni.
    ```bash
    ./run.sh
    ```
-4. Ouvre **http://127.0.0.1:5000** dans le navigateur.
+4. Ouvre **http://127.0.0.1:5000** dans le navigateur (`run.sh` l'ouvre
+   automatiquement s'il le peut).
+
+### Raccourci cliquable (comme un .bat Windows)
+
+Pour lancer le programme d'un double-clic, sans terminal, crée un raccourci :
+
+```bash
+./install-desktop.sh
+```
+
+Cela ajoute **« Étiquettes QL-570 »** dans le menu des applications **et** une
+icône sur le bureau. Ensuite, un simple double-clic lance le programme et
+ouvre le navigateur.
+
+> Au 1er double-clic sur l'icône du bureau, certains systèmes demandent
+> d'« autoriser le lancement » (clic droit → *Autoriser le lancement* /
+> *Allow Launching*).
 
 > Pour imprimer sans `sudo`, ajoute la règle USB (voir README → « Droits
 > d'accès USB »).

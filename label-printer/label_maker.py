@@ -96,7 +96,7 @@ def _make_qr(data: str, box: int = 10):
     return qr.make_image(fill_color="black", back_color="white").convert("L")
 
 
-def _make_barcode(data: str, symbology: str = "code128"):
+def _make_barcode(data: str, symbology: str = "code128", write_text: bool = True):
     import barcode
     from barcode.writer import ImageWriter
 
@@ -104,8 +104,10 @@ def _make_barcode(data: str, symbology: str = "code128"):
     writer = ImageWriter()
     bc = cls(data, writer=writer)
     buf = io.BytesIO()
-    bc.write(buf, options={"module_height": 12.0, "font_size": 8,
-                           "text_distance": 3, "quiet_zone": 2})
+    options = {"module_height": 12.0, "quiet_zone": 2, "write_text": write_text}
+    if write_text:
+        options.update({"font_size": 8, "text_distance": 3})
+    bc.write(buf, options=options)
     buf.seek(0)
     return Image.open(buf).convert("L")
 
@@ -121,6 +123,7 @@ class LabelContent:
     qr_size_mm: int = 0          # 0 => auto
     barcode_data: str = ""
     barcode_type: str = "code128"
+    barcode_text: bool = True    # afficher le texte sous le code-barres
     image_bytes: bytes | None = field(default=None, repr=False)
     length_mm: int = 0           # longueur pour rouleau continu (0 => auto)
     rotate: bool = False         # pivoter le contenu de 90°
@@ -188,7 +191,8 @@ def render(content: LabelContent) -> Image.Image:
         blocks.append(_render_text_block(content, inner_w, max_h))
 
     if content.barcode_data.strip():
-        bc = _make_barcode(content.barcode_data.strip(), content.barcode_type)
+        bc = _make_barcode(content.barcode_data.strip(), content.barcode_type,
+                           write_text=content.barcode_text)
         if bc.width > inner_w:
             ratio = inner_w / bc.width
             bc = bc.resize((inner_w, int(bc.height * ratio)))

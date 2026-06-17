@@ -84,11 +84,14 @@ def _content_from_request(form, files, code=None) -> label_maker.LabelContent:
         qr_data = code if _is_true(form, "code_qr") else ""
         barcode_data = code if _is_true(form, "code_barcode") else ""
         barcode_type = "code128"   # supporte lettres + tirets
+        # Le code est déjà affiché comme texte : pas de doublon sous le code-barres.
+        barcode_text = False
     else:
         text = form.get("text", "")
         qr_data = form.get("qr_data", "")
         barcode_data = form.get("barcode_data", "")
         barcode_type = form.get("barcode_type", "code128")
+        barcode_text = True
 
     return label_maker.LabelContent(
         label=form.get("label", "62"),
@@ -100,6 +103,7 @@ def _content_from_request(form, files, code=None) -> label_maker.LabelContent:
         qr_size_mm=as_int("qr_size_mm", 0),
         barcode_data=barcode_data,
         barcode_type=barcode_type,
+        barcode_text=barcode_text,
         image_bytes=image_bytes,
         length_mm=as_int("length_mm", 0),
         rotate=_is_true(form, "rotate"),

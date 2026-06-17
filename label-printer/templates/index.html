@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Étiquettes — Brother QL-570</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>🏷️ Impression d'étiquettes</h1>
+    <span class="sub">Brother QL-570</span>
+  </header>
+
+  <main>
+    <form id="label-form" class="panel">
+      <label class="field">
+        <span>Format du rouleau DK</span>
+        <select name="label" id="label">
+          {% for l in labels %}
+          <option value="{{ l.id }}" {% if l.id == '62' %}selected{% endif %}>{{ l.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label class="field" id="length-field">
+        <span>Longueur (mm, rouleau continu — 0 = auto)</span>
+        <input type="number" name="length_mm" value="0" min="0" max="1000">
+      </label>
+
+      <fieldset>
+        <legend>Texte</legend>
+        <textarea name="text" rows="3" placeholder="Une ligne par retour à la ligne…"></textarea>
+        <div class="row">
+          <label class="field small">
+            <span>Taille (0 = auto)</span>
+            <input type="number" name="font_size" value="0" min="0" max="200">
+          </label>
+          <label class="field small">
+            <span>Alignement</span>
+            <select name="align">
+              <option value="center" selected>Centré</option>
+              <option value="left">Gauche</option>
+              <option value="right">Droite</option>
+            </select>
+          </label>
+          <label class="field small checkbox">
+            <input type="checkbox" name="bold" checked> <span>Gras</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>QR code</legend>
+        <input type="text" name="qr_data" placeholder="URL ou texte du QR code">
+      </fieldset>
+
+      <fieldset>
+        <legend>Code-barres</legend>
+        <div class="row">
+          <input type="text" name="barcode_data" placeholder="Données du code-barres">
+          <select name="barcode_type">
+            <option value="code128" selected>Code128</option>
+            <option value="code39">Code39</option>
+            <option value="ean13">EAN-13</option>
+            <option value="ean8">EAN-8</option>
+            <option value="upca">UPC-A</option>
+            <option value="isbn13">ISBN-13</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Image / logo</legend>
+        <input type="file" name="image" accept="image/*">
+      </fieldset>
+
+      <fieldset>
+        <legend>Imprimante</legend>
+        <input type="text" name="printer" value="{{ printer }}">
+        <div class="row">
+          <label class="field small checkbox">
+            <input type="checkbox" name="cut" checked> <span>Couper après impression</span>
+          </label>
+          <button type="button" id="detect-btn" class="ghost">Détecter</button>
+        </div>
+        <small id="detect-result"></small>
+      </fieldset>
+
+      <div class="actions">
+        <button type="button" id="preview-btn" class="ghost">Aperçu</button>
+        <button type="submit" id="print-btn">Imprimer</button>
+      </div>
+      <div id="status" class="status"></div>
+    </form>
+
+    <section class="panel preview-panel">
+      <h2>Aperçu</h2>
+      <div class="preview-box">
+        <img id="preview-img" alt="Aperçu de l'étiquette">
+        <p id="preview-empty">Cliquez sur « Aperçu » pour visualiser l'étiquette.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

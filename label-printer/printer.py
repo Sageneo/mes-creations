@@ -23,6 +23,25 @@ def default_printer() -> str:
     )
 
 
+def sanitize_identifier(ident: str) -> str:
+    """Nettoie un identifiant brother_ql potentiellement corrompu.
+
+    Certaines QL-570 renvoient un numéro de série invalide (caractères non
+    ASCII) que brother_ql colle à l'identifiant USB sous la forme
+    ``usb://0x04f9:0x2028_<série>``. Ce suffixe casse l'analyse hexadécimale.
+    On ne conserve donc que ``usb://0xVVVV:0xPPPP``.
+    """
+    if not ident:
+        return ident
+    if ident.startswith("usb://"):
+        body = ident[len("usb://"):]
+        # garde uniquement vendor:product, retire série (_… ou /…)
+        for sep in ("_", "/"):
+            body = body.split(sep, 1)[0]
+        return "usb://" + body
+    return ident
+
+
 def discover():
     """Retourne la liste des imprimantes détectées (USB)."""
     found = []
@@ -31,7 +50,10 @@ def discover():
             be = backend_factory(backend)
             for dev in be["list_available_devices"]():
                 ident = dev.get("identifier") if isinstance(dev, dict) else dev
-                found.append({"backend": backend, "identifier": ident})
+                found.append({
+                    "backend": backend,
+                    "identifier": sanitize_identifier(ident),
+                })
         except Exception:
             continue
     return found
@@ -44,7 +66,7 @@ def print_label(image: Image.Image, label: str, printer: str | None = None,
 
     Retourne un dict {"success": bool, "message": str, ...}.
     """
-    printer = printer or default_printer()
+    printer = sanitize_identifier(printer or default_printer())
     try:
         backend = guess_backend(printer)
     except Exception:

@@ -82,6 +82,31 @@ document.getElementById("save-btn").addEventListener("click", async () => {
   }
 });
 
+document.getElementById("detect-media-btn").addEventListener("click", async () => {
+  const out = document.getElementById("media-result");
+  out.textContent = "Lecture de l'imprimante…";
+  try {
+    const printer = encodeURIComponent(form.printer.value || "");
+    const res = await fetch("/api/media?printer=" + printer);
+    const data = await res.json();
+    if (!data.available) {
+      out.textContent = "❌ " + (data.message || "Étiquette non détectée.");
+      return;
+    }
+    const kind = data.media_length ? (data.media_width + "x" + data.media_length + "mm") : (data.media_width + "mm continu");
+    let msg = "✅ Détecté : " + kind + " (" + (data.media_type || "?") + ")";
+    if (data.label) {
+      const opt = Array.from(labelSelect.options).find((o) => o.value === data.label);
+      if (opt) { labelSelect.value = data.label; toggleLength(); msg += " → format « " + opt.textContent + " » sélectionné"; }
+      else { msg += " — aucun format correspondant dans la liste"; }
+    }
+    if (data.errors && data.errors.length) msg += " ⚠️ " + data.errors.join(", ");
+    out.textContent = msg;
+  } catch (e) {
+    out.textContent = "❌ " + e.message;
+  }
+});
+
 document.getElementById("detect-btn").addEventListener("click", async () => {
   const out = document.getElementById("detect-result");
   out.textContent = "Recherche…";

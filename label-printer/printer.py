@@ -7,7 +7,7 @@ import os
 from PIL import Image
 from brother_ql.raster import BrotherQLRaster
 from brother_ql.conversion import convert
-from brother_ql.backends.helpers import send
+from brother_ql.backends.helpers import send, interpret_response
 from brother_ql.backends import backend_factory, guess_backend
 
 MODEL = "QL-570"
@@ -57,6 +57,67 @@ def discover():
         except Exception:
             continue
     return found
+
+
+# Séquence de requête de statut Brother QL :
+#   200 octets nuls (invalidation) + ESC @ (init) + ESC i S (demande statut)
+_STATUS_REQUEST = b"\x00" * 200 + b"\x1b\x40" + b"\x1b\x69\x53"
+
+
+def read_media_status(printer: str | None = None) -> dict:
+    """Interroge l'imprimante et renvoie le média actuellement chargé.
+
+    Retourne un dict avec au moins {"available": bool}. Si la lecture
+    réussit : media_width (mm), media_length (mm, 0 = continu), media_type…
+    """
+    printer = sanitize_identifier(printer or default_printer())
+    try:
+        backend = guess_backend(printer)
+    except Exception:
+        backend = "pyusb"
+
+    be = backend_factory(backend)
+    dev = None
+    try:
+        dev = be["backend_class"](printer)
+        dev.write(_STATUS_REQUEST)
+        data = dev.read(32)
+        if not data or len(data) < 32:
+            return {"available": False,
+                    "message": "Aucune réponse de l'imprimante."}
+        info = interpret_response(data)
+        info["available"] = True
+        info["label"] = match_label(info.get("media_width", 0),
+                                    info.get("media_length", 0))
+        return info
+    except Exception as exc:  # noqa: BLE001
+        return {"available": False, "message": str(exc)}
+    finally:
+        if dev is not None:
+            try:
+                dev.dispose()
+            except Exception:
+                pass
+
+
+def match_label(width_mm: int, length_mm: int):
+    """Trouve l'identifiant brother_ql correspondant au média détecté."""
+    if not width_mm:
+        return None
+    from brother_ql.labels import ALL_LABELS
+
+    continuous = not length_mm
+    best = None
+    for lab in ALL_LABELS:
+        tw, tl = lab.tape_size
+        if tw != width_mm:
+            continue
+        if continuous and tl == 0:
+            return lab.identifier
+        if not continuous and abs(tl - length_mm) <= 1:
+            return lab.identifier
+        best = best or lab.identifier
+    return best
 
 
 def print_label(image: Image.Image, label: str, printer: str | None = None,

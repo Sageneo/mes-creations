@@ -93,6 +93,15 @@ Variables d'environnement reconnues :
 Le champ « Imprimante » de l'interface accepte aussi un backend
 `linux_kernel`, par exemple `file:///dev/usb/lp0`.
 
+## Détection de l'étiquette chargée
+
+Le bouton **« 🔎 Détecter l'étiquette dans la machine »** interroge la QL-570
+(commande de statut Brother) et lit le média réellement inséré : largeur en
+mm, longueur (0 = rouleau continu) et type. Le format de rouleau
+correspondant est alors **sélectionné automatiquement** dans la liste. Cela
+évite d'imprimer avec un mauvais format. La QL-570 doit être branchée,
+allumée et accessible (mêmes prérequis USB que pour l'impression).
+
 ## Sauvegarde de la configuration
 
 Le bouton **« 💾 Enregistrer comme défaut »** mémorise les réglages courants

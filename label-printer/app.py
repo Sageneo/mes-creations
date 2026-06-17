@@ -105,6 +105,12 @@ def api_labels():
     return jsonify(label_maker.list_labels())
 
 
+@app.route("/api/media")
+def api_media():
+    chosen = request.args.get("printer") or printer.default_printer()
+    return jsonify(printer.read_media_status(chosen))
+
+
 @app.route("/api/printers")
 def api_printers():
     return jsonify({

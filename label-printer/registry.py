@@ -16,7 +16,9 @@ import json
 import os
 import re
 
-REGISTRY_PATH = os.path.join(
+# Emplacement du registre : variable QL_REGISTRY (utile pour pointer vers un
+# dossier synchronisé) ou registry.json à côté du programme par défaut.
+REGISTRY_PATH = os.environ.get("QL_REGISTRY") or os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "registry.json")
 
 # Zone 1 — préfixes autorisés (liste fermée)
@@ -130,3 +132,68 @@ def list_codes() -> list[dict]:
     out = [{"code": c, **v} for c, v in data["codes"].items()]
     out.sort(key=lambda x: x["code"])
     return out
+
+
+def counters() -> list[dict]:
+    """État de la numérotation : dernier et prochain numéro par préfixe/année."""
+    groups: dict[tuple, list[int]] = {}
+    for code in _load()["codes"]:
+        m = CODE_RE.match(code)
+        if not m:
+            continue
+        prefix, rest = code.split("-", 1)
+        year, num = rest.split("-")
+        groups.setdefault((prefix, year), []).append(int(num))
+    out = []
+    for (prefix, year), nums in groups.items():
+        out.append({
+            "prefix": prefix, "year": year, "count": len(nums),
+            "last": max(nums), "next": max(nums) + 1,
+        })
+    out.sort(key=lambda x: (x["prefix"], x["year"]))
+    return out
+
+
+def delete(code: str) -> bool:
+    data = _load()
+    if code in data["codes"]:
+        del data["codes"][code]
+        _save(data)
+        return True
+    return False
+
+
+def export_data() -> dict:
+    """Contenu complet du registre (pour téléchargement/sauvegarde)."""
+    return _load()
+
+
+def import_data(incoming: dict, merge: bool = True) -> dict:
+    """Importe un registre. merge=True fusionne, sinon remplace.
+
+    Retourne {"added": n, "updated": n, "total": n}.
+    """
+    if not isinstance(incoming, dict) or "codes" not in incoming:
+        raise ValueError("Fichier de suivi invalide (clé « codes » absente).")
+    base = _load() if merge else {"codes": {}}
+    added = updated = 0
+    for code, entry in incoming["codes"].items():
+        if not CODE_RE.match(code):
+            continue
+        if code in base["codes"]:
+            cur = base["codes"][code]
+            cur["count"] = max(cur.get("count", 1), entry.get("count", 1))
+            # garde la première date la plus ancienne et la dernière la plus récente
+            fp = [d for d in (cur.get("first_printed"), entry.get("first_printed")) if d]
+            lp = [d for d in (cur.get("last_printed"), entry.get("last_printed")) if d]
+            if fp:
+                cur["first_printed"] = min(fp)
+            if lp:
+                cur["last_printed"] = max(lp)
+            updated += 1
+        else:
+            base["codes"][code] = entry
+            added += 1
+    _save(base)
+    return {"added": added, "updated": updated, "total": len(base["codes"])}
+

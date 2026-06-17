@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Suivi des étiquettes — Brother QL-570</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>📊 Base de suivi des codes</h1>
+    <a href="/" style="margin-left:auto;color:#fff">← Retour à l'impression</a>
+  </header>
+
+  <main style="grid-template-columns:1fr">
+    <section class="panel">
+      <h2 style="margin-top:0">État de la numérotation</h2>
+      <table id="counters" class="reg-table">
+        <thead><tr><th>Préfixe</th><th>Année</th><th>Imprimés</th><th>Dernier n°</th><th>Prochain libre</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="counters-empty" class="muted">Aucune numérotation pour le moment.</p>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="align-items:center">
+        <h2 style="margin:0;flex:1">Codes imprimés (<span id="total">0</span>)</h2>
+        <input type="search" id="filter" placeholder="Filtrer…" style="max-width:200px">
+        <button type="button" id="refresh" class="ghost">Rafraîchir</button>
+      </div>
+      <table id="codes" class="reg-table">
+        <thead><tr><th>Code</th><th>Impressions</th><th>1re impression</th><th>Dernière</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p id="codes-empty" class="muted">Aucun code enregistré.</p>
+    </section>
+
+    <section class="panel">
+      <h2 style="margin-top:0">Sauvegarde / transfert</h2>
+      <p class="muted">Pour utiliser la même numérotation sur un autre PC : exporte ici,
+        copie le fichier sur l'autre PC, puis importe-le.</p>
+      <div class="row">
+        <a href="/api/registry/export" class="btn-link">⬇️ Exporter (télécharger)</a>
+        <label class="field small" style="flex:2">
+          <span>Importer un fichier de suivi (.json)</span>
+          <input type="file" id="import-file" accept="application/json,.json">
+        </label>
+        <label class="field small checkbox">
+          <input type="checkbox" id="import-replace"> <span>Remplacer (au lieu de fusionner)</span>
+        </label>
+        <button type="button" id="import-btn">Importer</button>
+      </div>
+      <div id="reg-status" class="status"></div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='registry.js') }}"></script>
+</body>
+</html>

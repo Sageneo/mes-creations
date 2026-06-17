@@ -219,7 +219,47 @@ def api_check_code():
 
 @app.route("/api/registry")
 def api_registry():
-    return jsonify(registry.list_codes())
+    return jsonify({"codes": registry.list_codes(),
+                    "counters": registry.counters()})
+
+
+@app.route("/registry")
+def registry_page():
+    return render_template("registry.html")
+
+
+@app.route("/api/registry/export")
+def api_registry_export():
+    data = json.dumps(registry.export_data(), ensure_ascii=False, indent=2)
+    buf = io.BytesIO(data.encode("utf-8"))
+    fname = f"suivi-etiquettes-{registry.current_yy()}.json"
+    return send_file(buf, mimetype="application/json",
+                     as_attachment=True, download_name=fname)
+
+
+@app.route("/api/registry/import", methods=["POST"])
+def api_registry_import():
+    merge = request.form.get("mode", "merge") != "replace"
+    try:
+        if "file" in request.files and request.files["file"].filename:
+            payload = json.load(request.files["file"])
+        else:
+            payload = json.loads(request.form.get("data", ""))
+        result = registry.import_data(payload, merge=merge)
+    except (ValueError, json.JSONDecodeError) as exc:
+        return jsonify({"success": False, "message": f"Import impossible : {exc}"}), 400
+    return jsonify({"success": True, "message":
+                    f"Import terminé : {result['added']} ajouté(s), "
+                    f"{result['updated']} mis à jour, {result['total']} au total.",
+                    **result})
+
+
+@app.route("/api/registry/delete", methods=["POST"])
+def api_registry_delete():
+    code = request.form.get("code", "")
+    ok = registry.delete(code)
+    return jsonify({"success": ok,
+                    "message": "Code supprimé." if ok else "Code introuvable."})
 
 
 @app.route("/api/preview", methods=["POST"])

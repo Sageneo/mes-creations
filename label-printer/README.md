@@ -46,7 +46,26 @@ Fonctionnement :
 Les codes imprimés sont mémorisés dans `registry.json` (local, non suivi
 par git).
 
+### Base de suivi (page « 📊 Suivi des codes »)
+
+Accessible via le lien en haut de l'interface. Elle affiche :
+
+- **l'état de la numérotation** : dernier et prochain numéro libre par
+  préfixe/année ;
+- **la liste des codes imprimés** (date, nombre d'impressions), avec
+  filtre et suppression d'une entrée erronée ;
+- **Exporter / Importer** le suivi (fichier `.json`) pour transférer la
+  numérotation vers un autre PC. L'import **fusionne** par défaut (option
+  « Remplacer » disponible).
+
+> Pour partager la numérotation entre PC, voir `INSTALL.md`. Le fichier de
+> suivi peut aussi être placé dans un dossier synchronisé via la variable
+> d'environnement `QL_REGISTRY`.
+
 ## Installation
+
+Voir **`INSTALL.md`** pour un guide pas à pas (Linux et Windows) et le
+transfert vers un autre PC.
 
 Prérequis : Python 3.10+.
 
@@ -119,6 +138,7 @@ Variables d'environnement reconnues :
 | `HOST`       | `127.0.0.1`                   | Adresse d'écoute (`0.0.0.0` pour le réseau local) |
 | `PORT`       | `5000`                        | Port HTTP                            |
 | `DEBUG`      | `0`                           | `1` pour activer le mode debug Flask |
+| `QL_REGISTRY`| `registry.json` (local)       | Chemin du fichier de suivi (ex. dossier synchronisé) |
 
 Le champ « Imprimante » de l'interface accepte aussi un backend
 `linux_kernel`, par exemple `file:///dev/usb/lp0`.

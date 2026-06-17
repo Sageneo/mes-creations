@@ -143,8 +143,11 @@ def render(content: LabelContent) -> Image.Image:
 
     if content.rotate:
         # Composition en paysage : l'axe horizontal devient la longueur.
-        avail_w = length                 # 0 => continu (largeur libre)
+        avail_w = length                 # 0 => continu (longueur libre)
         cross = head                     # hauteur de composition fixée à la tête
+        if avail_w == 0 and content.length_mm > 0:
+            # Continu pivoté avec longueur imposée par l'utilisateur.
+            avail_w = int(content.length_mm / 25.4 * DPI)
     else:
         avail_w = head                   # largeur de composition fixée à la tête
         cross = length                   # 0 => continu (hauteur libre)
@@ -152,9 +155,11 @@ def render(content: LabelContent) -> Image.Image:
     if avail_w > 0:
         inner_w = max(10, avail_w - 2 * margin)
     else:
-        # Largeur libre (continu pivoté) : on borne large, la taille du texte
-        # est limitée par la hauteur (cross) via max_h.
-        inner_w = 4000
+        # Continu pivoté en longueur AUTO : on borne sur la largeur de tête
+        # pour éviter une étiquette démesurée (sinon le texte est agrandi
+        # jusqu'à remplir les 62 mm, ce qui donne une étiquette très longue).
+        # Pour agrandir, l'utilisateur fixe une « Longueur » ou la taille.
+        inner_w = max(10, head - 2 * margin)
     max_h = (cross - 2 * margin) if cross > 0 else None
 
     # --- Construction des blocs (de haut en bas) ---

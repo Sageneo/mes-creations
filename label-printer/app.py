@@ -6,6 +6,9 @@ import base64
 import io
 import json
 import os
+import signal
+import threading
+import time
 
 from flask import Flask, jsonify, render_template, request, send_file
 
@@ -260,6 +263,16 @@ def api_registry_delete():
     ok = registry.delete(code)
     return jsonify({"success": ok,
                     "message": "Code supprimé." if ok else "Code introuvable."})
+
+
+@app.route("/api/quit", methods=["POST"])
+def api_quit():
+    """Arrête proprement le serveur (utile quand il tourne sans terminal)."""
+    def _shutdown():
+        time.sleep(0.4)
+        os.kill(os.getpid(), signal.SIGTERM)
+    threading.Thread(target=_shutdown, daemon=True).start()
+    return jsonify({"success": True, "message": "Serveur arrêté."})
 
 
 @app.route("/api/preview", methods=["POST"])

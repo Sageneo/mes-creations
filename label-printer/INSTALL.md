@@ -38,6 +38,12 @@ Cela ajoute **« Étiquettes QL-570 »** dans le menu des applications **et** un
 icône sur le bureau. Ensuite, un simple double-clic lance le programme et
 ouvre le navigateur.
 
+Le programme tourne **sans fenêtre de terminal** (en arrière-plan) : le
+client ne risque pas de l'arrêter en fermant une fenêtre. Pour l'arrêter
+volontairement, utilise le bouton **« ⏻ Arrêter le programme »** en bas de
+l'interface. Relancer = re-cliquer l'icône (si déjà lancé, ça rouvre juste
+le navigateur).
+
 > Au 1er double-clic sur l'icône du bureau, certains systèmes demandent
 > d'« autoriser le lancement » (clic droit → *Autoriser le lancement* /
 > *Allow Launching*).

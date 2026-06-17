@@ -7,7 +7,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 NAME="Étiquettes QL-570"
 DESKTOP_FILE_NAME="etiquettes-ql570.desktop"
 
-chmod +x "$DIR/run.sh"
+chmod +x "$DIR/run.sh" "$DIR/launch.sh"
 
 # Contenu du lanceur (chemins absolus de ce dossier).
 read -r -d '' CONTENT <<EOF || true
@@ -16,9 +16,9 @@ Type=Application
 Version=1.0
 Name=$NAME
 Comment=Imprimer des étiquettes sur Brother QL-570
-Exec=$DIR/run.sh
+Exec=$DIR/launch.sh
 Icon=$DIR/icon.png
-Terminal=true
+Terminal=false
 Categories=Utility;Office;
 EOF
 

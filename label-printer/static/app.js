@@ -188,5 +188,16 @@ document.getElementById("next-num-btn").addEventListener("click", async () => {
 updateCodeMode();
 updateSeries();
 
+document.getElementById("quit-btn").addEventListener("click", async () => {
+  if (!confirm("Arrêter le programme ? Tu pourras le relancer depuis l'icône.")) return;
+  try {
+    await fetch("/api/quit", { method: "POST" });
+  } catch (e) { /* le serveur se coupe, l'erreur réseau est normale */ }
+  document.body.innerHTML =
+    "<div style='padding:3rem;text-align:center;font-family:sans-serif'>" +
+    "<h2>Programme arrêté ✅</h2><p>Tu peux fermer cet onglet. " +
+    "Relance via l'icône « Étiquettes QL-570 ».</p></div>";
+});
+
 // Détection automatique de l'étiquette au démarrage (silencieuse).
 loadLabelMeta().then(() => detectMedia(true));
